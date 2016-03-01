@@ -7,30 +7,33 @@
 
 using namespace Clustering;
 using std::cout;
-using std::cin;
+//using std::cin;
 
 unsigned int Point::__idGen = 0;
 
 // Constructor which takes one int argument (how many dimensions the new point will have)
+// Problem: this leaves values not initialised..
 Point::Point(int dim)
     {
         __dim = dim;
         __id = __idGen;
         __idGen++;
+        __values = new double(__dim);
     }
 
 // Constructor which takes an int argument of the new Point's dimensions and a
 //    pointer to dynamically allocate a double array of the Point's.. points.
-Point::Point(int dim, double *arrayPtr)
+Point::Point(int dim, double *values)
     {
         __dim = dim;
-        arrayPtr = __values;
+        __values = values;
+        __values = new double(__dim);
         __id = __idGen;
         __idGen++;
     }
 
 // Copy constructor
-Point::Point(const ::Clustering::Point::Point &p1)
+Point::Point(const Point &p1)
     {
         // copy p1's __id to calling point's __id
         // assign calling point's arrayptr to p1's
@@ -46,13 +49,13 @@ Point &Point::operator=(const Point& p1)
         __id = __idGen;
         ++__idGen;
         __values = p1.__values;
-        // how to return a new point?
+        return *this;
     }
 
 // Destructor
 Point::~Point()
     {
-        //delete ; but what?
+        delete []__values;
     }
 
 // ID accessor function
@@ -67,63 +70,82 @@ int Point::getDims() const
 void Point::setValue(int dim, double d)
     {
         __dim = dim;
-        //__values = d;
+        for (int i = 0; i < dim; ++i)
+        {
+            __values[i] = d;
+        }
     }
 
 // Accessor function which returns   a thing.
-double Point::getValue(int dim) const
+double Point::getValue(int index) const
     {
-        // for loop! for loop! for to cycle through the double array
-        // counter < dim. :)
-        if(dim == 0)
-        { return 0; }
-        else
-        {
-            for (int counter = 1; counter <= dim; ++counter)
-                return __values[counter];
-        }
+        return __values[index];
     }
 
 
 // Finds distance between the point calling it and another point
 double Point::distanceTo(const Point &p2) const
     {
-        double distance;
-        distance = sqrt( pow((p2.x-pointA.x),2.0) + pow((p2.y-pointA.y),2.0) + pow((p2.z-pointA.z),2.0) );
-        return distance; // I htink this will require overloading the [] and running through each value.
+        double distance = 0, temp = 0;
+        for (int i = 1; i < __dim; i++)
+        { temp += pow(__values[i], p2.__values[i]); }
+
+        distance = sqrt(temp);
+        return distance;
     }
 
-Point &operator*=(double) // p *= 6; p.operator*=(6);
+Point& Point::operator*=(double d) // p *= 6; p.operator*=(6);
     {
-
+        for (int i = 1; i < __dim; i++)
+        { __values[i] = (__values[i] * d); }
+        return *this;
     }
 
 Point &Point::operator/=(double d)
     {
-        for (int i = 0; i < __dim; i++)
+        for (int i = 1; i < __dim; i++)
             __values[i] /= d;
         return *this;
     }
 
 const Point Point::operator*(double d) const // prevent (p1 * 2) = p2;
     {
-        // is returning *this doing the preventy thing?
+        // is returning *this doing the preventing thing?
         for (int i = 0; i < __dim; i++)
         __values[i] = __values[i] * d;
         return *this;
 
-
     }
 
-const Point operator/(double) const; // p3 = p2 / 2;
+const Point Point::operator/(double d) const // p3 = p2 / 2;
     {
-        // so.. is this returning a new point? is that what the p3 is implying?
+        Point p1(__dim); // could copy constructor from calling point, but what to name calling point?
+        for (int i = 1; i < p1.__dim; i++)
+            p1.__values[i] = __values[i]/d;
+        return p1;
     }
 
-double Point::&operator[](int index)
+double& Point::operator[](int index) // I'm doing this the basic and more-work way but whatever.
     {
-        return Point::getValue(index);
+//        double tempArray[__dim];
+//        tempArray = __values;
+//        return tempArray[index];
     }
 // Friends
-friend Point &operator+=(Point &, const Point &);
-friend Point &operator-=(Point &, const Point &);
+Point &operator+=(Point &p1, const Point &p2)
+{
+    for (int i = 0; i < p1.getDims(); ++i)
+    {
+        p1.__values[i] = p1.__values[i] + p2.__values[i];
+    }
+    return p1;
+}
+
+Point &operator-=(Point &p1, const Point &p2)
+{
+    for (int i = 0; i < p1.__dim; ++i)
+    {
+        p1.__values[i] = p1.__values[i] - p2.__values[i];
+    }
+    return p1;
+}
